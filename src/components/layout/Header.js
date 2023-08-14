@@ -1,11 +1,22 @@
 import React, { useState } from 'react';
 import { FaPizzaSlice } from 'react-icons/fa';
 import PropTypes from 'prop-types';
+
 import { AddTask } from '../AddTask';
+import { useProjectsValue, useSelectedProjectValue } from '../../context';
 
 export const Header = ({ darkMode, setDarkMode }) => {
   const [shouldShowMain, setShouldShowMain] = useState(false);
   const [showQuickAddTask, setShowQuickAddTask] = useState(false);
+
+  const { projects, setProjects } = useProjectsValue();
+  const { selectedProject } = useSelectedProjectValue();
+
+  const onAdd = (task, project) => {
+    if (project === selectedProject) {
+      setProjects([...projects, task]);
+    }
+  };
 
   return (
     <header className="header" data-testid="header">
@@ -43,6 +54,7 @@ export const Header = ({ darkMode, setDarkMode }) => {
       </nav>
 
       <AddTask
+        onAdd={onAdd}
         showAddTaskMain={false}
         shouldShowMain={shouldShowMain}
         showQuickAddTask={showQuickAddTask}

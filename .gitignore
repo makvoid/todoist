@@ -9,6 +9,7 @@
 # production
 /build
 /src/firebase.js
+/src/harperdb.js
 
 # misc
 .DS_Store

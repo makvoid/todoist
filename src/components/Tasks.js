@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+
 import { Checkbox } from './Checkbox';
 import { AddTask } from './AddTask';
 import { useTasks } from '../hooks';
@@ -9,7 +10,7 @@ import { useSelectedProjectValue, useProjectsValue } from '../context';
 export const Tasks = () => {
   const { selectedProject } = useSelectedProjectValue();
   const { projects } = useProjectsValue();
-  const { tasks } = useTasks(selectedProject);
+  const { tasks, setTasks } = useTasks(selectedProject);
 
   let projectName = '';
 
@@ -37,13 +38,18 @@ export const Tasks = () => {
       <ul className="tasks__list">
         {tasks.map((task) => (
           <li key={`${task.id}`}>
-            <Checkbox id={task.id} taskDesc={task.task} />
+            <Checkbox
+              selectedProject={selectedProject}
+              id={task.id}
+              taskDesc={task.task}
+              onArchive={() => setTasks([...tasks.filter((v) => v !== task)])}
+            />
             <span>{task.task}</span>
           </li>
         ))}
       </ul>
 
-      <AddTask />
+      <AddTask onAdd={(task) => setTasks([...tasks, task])} />
     </div>
   );
 };

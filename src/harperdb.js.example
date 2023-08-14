@@ -1,0 +1,6 @@
+const harperDBConfig = {
+  hostname: 'https://my-hdb-host:9926',
+  project: 'todoist',
+};
+
+export { harperDBConfig };

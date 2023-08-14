@@ -1,8 +1,13 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import { firebase } from '../firebase';
+
 import { generatePushId } from '../helpers';
 import { useProjectsValue } from '../context';
+import { dbClient, userId } from '../constants';
+import { FirebaseClient, HarperDBClient } from '../clients';
+
+const firebase = new FirebaseClient();
+const harperDb = new HarperDBClient();
 
 export const AddProject = ({ shouldShow = false }) => {
   const [show, setShow] = useState(shouldShow);
@@ -11,21 +16,30 @@ export const AddProject = ({ shouldShow = false }) => {
   const projectId = generatePushId();
   const { projects, setProjects } = useProjectsValue();
 
-  const addProject = () =>
-    projectName &&
-    firebase
-      .firestore()
-      .collection('projects')
-      .add({
-        projectId,
-        name: projectName,
-        userId: 'jlIFXIwyAL3tzHMtzRbw',
-      })
-      .then(() => {
-        setProjects([...projects]);
-        setProjectName('');
-        setShow(false);
-      });
+  const addProject = async () => {
+    if (!projectName) return;
+
+    const payload = {
+      projectId,
+      projectName,
+      userId,
+    };
+
+    switch (dbClient) {
+      case 'firebase':
+        await firebase.addProject(payload);
+        break;
+      case 'harperdb':
+        await harperDb.addProject(payload);
+        break;
+      default:
+        throw new Error(`Unsupported DB Client: ${dbClient}`);
+    }
+
+    setProjects([...projects, payload]);
+    setProjectName('');
+    setShow(false);
+  };
 
   return (
     <div className="add-project" data-testid="add-project">

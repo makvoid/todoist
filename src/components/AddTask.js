@@ -2,28 +2,36 @@ import React, { useState } from 'react';
 import { FaRegListAlt, FaRegCalendarAlt } from 'react-icons/fa';
 import moment from 'moment';
 import PropTypes from 'prop-types';
-import { firebase } from '../firebase';
+
 import { useSelectedProjectValue } from '../context';
 import { ProjectOverlay } from './ProjectOverlay';
 import { TaskDate } from './TaskDate';
+import { dbClient, userId } from '../constants';
+import { FirebaseClient, HarperDBClient } from '../clients';
+import { generatePushId } from '../helpers';
+
+const firebase = new FirebaseClient();
+const harperDb = new HarperDBClient();
 
 export const AddTask = ({
   showAddTaskMain = true,
   shouldShowMain = false,
   showQuickAddTask,
   setShowQuickAddTask,
+  onAdd,
 }) => {
   const [task, setTask] = useState('');
   const [taskDate, setTaskDate] = useState('');
-  const [project, setProject] = useState('');
+  const [project, setProject] = useState(null);
   const [showMain, setShowMain] = useState(shouldShowMain);
   const [showProjectOverlay, setShowProjectOverlay] = useState(false);
   const [showTaskDate, setShowTaskDate] = useState(false);
 
   const { selectedProject } = useSelectedProjectValue();
 
-  const addTask = () => {
+  const addTask = async () => {
     const projectId = project || selectedProject;
+    const id = generatePushId();
     let collatedDate = '';
 
     if (projectId === 'TODAY') {
@@ -32,26 +40,33 @@ export const AddTask = ({
       collatedDate = moment().add(7, 'days').format('DD/MM/YYYY');
     }
 
-    return (
-      task &&
-      projectId &&
-      firebase
-        .firestore()
-        .collection('tasks')
-        .add({
-          archived: false,
-          projectId,
-          task,
-          date: collatedDate || taskDate,
-          userId: 'jlIFXIwyAL3tzHMtzRbw',
-        })
-        .then(() => {
-          setTask('');
-          setProject('');
-          setShowMain('');
-          setShowProjectOverlay(false);
-        })
-    );
+    if (!task || !projectId) return;
+
+    const payload = {
+      id,
+      archived: false,
+      projectId,
+      task,
+      date: collatedDate || taskDate,
+      userId,
+    };
+
+    switch (dbClient) {
+      case 'firebase':
+        await firebase.addTask(payload);
+        break;
+      case 'harperdb':
+        await harperDb.addTask(projectId, payload);
+        break;
+      default:
+        throw new Error(`Unsupported DB Client: ${dbClient}`);
+    }
+
+    onAdd(payload, projectId);
+    setTask('');
+    setProject('');
+    setShowMain('');
+    setShowProjectOverlay(false);
   };
 
   return (
