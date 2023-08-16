@@ -13,13 +13,23 @@ class FirebaseClient {
   }
 
   async getProjects() {
-    const allProjects = await firebase
-      .firestore()
-      .collection('projects')
-      .where('userId', '==', userId)
-      .orderBy('projectId')
-      .get();
-    return allProjects;
+    return new Promise((resolve) => {
+      let unsubscribe = firebase
+        .firestore()
+        .collection('projects')
+        .where('userId', '==', userId)
+        .orderBy('projectId');
+
+      unsubscribe = unsubscribe.onSnapshot((snapshot) => {
+        const newProjects = snapshot.docs.map((project) => ({
+          id: project.id,
+          ...project.data(),
+        }));
+
+        unsubscribe();
+        resolve(newProjects);
+      });
+    });
   }
 
   addProject(payload) {
@@ -31,32 +41,38 @@ class FirebaseClient {
   }
 
   async getTasks(selectedProject) {
-    let unsubscribe = firebase
-      .firestore()
-      .collection('tasks')
-      .where('userId', '==', userId);
+    return new Promise((resolve) => {
+      let unsubscribe = firebase
+        .firestore()
+        .collection('tasks')
+        .where('userId', '==', userId);
 
-    unsubscribe =
-      selectedProject && !collatedTasksExist(selectedProject)
-        ? (unsubscribe = unsubscribe.where('projectId', '==', selectedProject))
-        : selectedProject === 'TODAY'
-        ? (unsubscribe = unsubscribe.where(
-            'date',
-            '==',
-            moment().format('DD/MM/YYYY')
-          ))
-        : selectedProject === 'INBOX' || selectedProject === 0
-        ? (unsubscribe = unsubscribe.where('date', '==', ''))
-        : unsubscribe;
+      unsubscribe =
+        selectedProject && !collatedTasksExist(selectedProject)
+          ? (unsubscribe = unsubscribe.where(
+              'projectId',
+              '==',
+              selectedProject
+            ))
+          : selectedProject === 'TODAY'
+          ? (unsubscribe = unsubscribe.where(
+              'date',
+              '==',
+              moment().format('DD/MM/YYYY')
+            ))
+          : selectedProject === 'INBOX' || selectedProject === 0
+          ? (unsubscribe = unsubscribe.where('date', '==', ''))
+          : unsubscribe;
 
-    unsubscribe = unsubscribe.onSnapshot((snapshot) => {
-      const newTasks = snapshot.docs.map((task) => ({
-        id: task.id,
-        ...task.data(),
-      }));
+      unsubscribe = unsubscribe.onSnapshot((snapshot) => {
+        const newTasks = snapshot.docs.map((task) => ({
+          id: task.id,
+          ...task.data(),
+        }));
 
-      unsubscribe();
-      return newTasks;
+        unsubscribe();
+        resolve(newTasks);
+      });
     });
   }
 

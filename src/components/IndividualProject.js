@@ -17,7 +17,7 @@ export const IndividualProject = ({ project }) => {
   const deleteProject = async () => {
     switch (dbClient) {
       case 'firebase':
-        await firebase.deleteProject(project.docId);
+        await firebase.deleteProject(project.id);
         break;
       case 'harperdb':
         await harperDb.deleteProject(project.id);

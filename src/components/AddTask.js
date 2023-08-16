@@ -43,7 +43,7 @@ export const AddTask = ({
     if (!task || !projectId) return;
 
     const payload = {
-      id,
+      docId: id,
       archived: false,
       projectId,
       task,

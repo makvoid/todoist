@@ -20,8 +20,9 @@ export const AddProject = ({ shouldShow = false }) => {
     if (!projectName) return;
 
     const payload = {
+      id: projectId,
       projectId,
-      projectName,
+      name: projectName,
       userId,
     };
 
